@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  name  String
+  avatar String
+  openid String @unique
+  created_time DateTime @default(dbgenerated("now()"))
+  updated_time DateTime @updatedAt
+}
+
+enum RoomStatus {
+  OPEN
+  CLOSED
+}
+
+model Room {
+  id Int @id @default(autoincrement())
+  owner Int 
+  status RoomStatus @default(OPEN)
+  created_time DateTime @default(dbgenerated("now()"))
+  closed_time DateTime @updatedAt
+}
+
+enum ScoreRecordStatus {
+  APPLY
+  ACCEPT
+  REJECT
+}
+
+enum ScoreRecordType {
+  BUYIN
+  CASHOUT
+}
+
+model ScoreRecords {
+  id Int @id @default(autoincrement())
+  uid Int 
+  room_id Int
+  status ScoreRecordStatus @default(APPLY)
+  score Int
+  type ScoreRecordType @default(BUYIN)
+  created_time DateTime @default(dbgenerated("now()"))
+  updated_time DateTime @updatedAt
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"private/backend/gamesRoom/prisma/db"
+	"private/backend/gamesRoom/src/config"
 	"private/backend/gamesRoom/src/utils"
 
 	"github.com/gin-gonic/gin"
@@ -59,10 +60,9 @@ func userLogin(c *gin.Context) {
 }
 
 func getWechatOpenidAndSessionKey(code string) (openid, sessionKey string, err error) {
-	appId := "wx7cf078db1b055aef"
-	appSecret := "a897857ca6eae5a80f01202cdbeffe64"
 
-	url := fmt.Sprintf("https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code", appId, appSecret, code)
+	base_url := "https://api.weixin.qq.com/sns/jscode2session?grant_type=authorization_code"
+	url := fmt.Sprintf("%s&appid=%s&secret=%s&js_code=%s", base_url, config.APP_ID, config.APP_SECRET, code)
 
 	resp, err := http.Get(url)
 	if err != nil {

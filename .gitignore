@@ -1,1 +1,3 @@
 src/config/config.go
+.DS_Store
+src/.DS_Store

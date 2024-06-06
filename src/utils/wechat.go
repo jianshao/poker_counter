@@ -1,4 +1,4 @@
-package qrcode
+package utils
 
 import (
 	"bytes"
@@ -9,6 +9,26 @@ import (
 	"private/backend/gamesRoom/src/config"
 )
 
+var (
+	URL_GET_OPENID    = "https://api.weixin.qq.com/sns/jscode2session?grant_type=authorization_code"
+	URL_GET_TOKEN     = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential"
+	URL_CREATE_QRCODE = "https://api.weixin.qq.com/cgi-bin/wxaapp/createwxaqrcode?"
+)
+
+// QrCodeResponse 用于接收二维码的响应结构
+type QrCodeResponse struct {
+	QrCodeURL string `json:"url"`
+	ErrCode   int    `json:"errcode"`
+	ErrMsg    string `json:"errmsg"`
+}
+
+var result struct {
+	Openid     string `json:"openid"`
+	SessionKey string `json:"session_key"`
+	ErrCode    int    `json:"errcode"`
+	ErrMsg     string `json:"errmsg"`
+}
+
 // AccessTokenResponse 用于接收 access_token 的响应结构
 type AccessTokenResponse struct {
 	AccessToken string `json:"access_token"`
@@ -17,8 +37,29 @@ type AccessTokenResponse struct {
 	ErrMsg      string `json:"errmsg"`
 }
 
+func GetWechatOpenidAndSessionKey(code string) (openid, sessionKey string, err error) {
+	url := fmt.Sprintf("%s&appid=%s&secret=%s&js_code=%s", URL_GET_OPENID, config.APP_ID, config.APP_SECRET, code)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return "", "", err
+	}
+
+	if result.ErrCode != 0 {
+		return "", "", fmt.Errorf("error from wechat: %d - %s", result.ErrCode, result.ErrMsg)
+	}
+
+	return result.Openid, result.SessionKey, nil
+}
+
 func getAccessToken(appId, appSecret string) (string, error) {
-	url := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s", appId, appSecret)
+	url := fmt.Sprintf("%s&appid=%s&secret=%s", URL_GET_TOKEN, appId, appSecret)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -43,15 +84,8 @@ func getAccessToken(appId, appSecret string) (string, error) {
 	return tokenResp.AccessToken, nil
 }
 
-// QrCodeResponse 用于接收二维码的响应结构
-type QrCodeResponse struct {
-	QrCodeURL string `json:"url"`
-	ErrCode   int    `json:"errcode"`
-	ErrMsg    string `json:"errmsg"`
-}
-
 func createMiniProgramQRCode(accessToken, path string) (string, error) {
-	url := fmt.Sprintf("https://api.weixin.qq.com/cgi-bin/wxaapp/createwxaqrcode?access_token=%s", accessToken)
+	url := fmt.Sprintf("%saccess_token=%s", URL_CREATE_QRCODE, accessToken)
 
 	data := map[string]string{
 		"path": path,

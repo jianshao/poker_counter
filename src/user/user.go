@@ -2,11 +2,9 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"private/backend/gamesRoom/prisma/db"
-	"private/backend/gamesRoom/src/config"
 	"private/backend/gamesRoom/src/utils"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +14,10 @@ func register(r *gin.Engine) {
 	r.POST(utils.BuildRouterPath("v1", "user/login"), userLogin)
 
 	r.POST(utils.BuildRouterPath("v1", "user/update"), userUpdate)
+
+	r.GET(utils.BuildRouterPath("v1", "openid"), getOpenId)
+	r.GET(utils.BuildRouterPath("v1", "user/check"), userCheck)
+	r.POST(utils.BuildRouterPath("v1", "user/create"), userCreate)
 }
 
 func Init(router *gin.Engine) {
@@ -31,7 +33,7 @@ func userLogin(c *gin.Context) {
 	}
 
 	// 调用微信接口获取 openid 和 session_key
-	openid, sessionKey, err := getWechatOpenidAndSessionKey(params.Code)
+	openid, sessionKey, err := utils.GetWechatOpenidAndSessionKey(params.Code)
 	if err != nil {
 		utils.BuildResponse(c, http.StatusOK, nil, 2, err.Error())
 		return
@@ -59,34 +61,58 @@ func userLogin(c *gin.Context) {
 	})
 }
 
-func getWechatOpenidAndSessionKey(code string) (openid, sessionKey string, err error) {
+func getOpenId(c *gin.Context) {
+	code := c.DefaultQuery("code", "")
+	if code == "" {
+		utils.BuildResponse(c, http.StatusOK, nil, 1, "Invalid request body")
+		return
+	}
 
-	base_url := "https://api.weixin.qq.com/sns/jscode2session?grant_type=authorization_code"
-	url := fmt.Sprintf("%s&appid=%s&secret=%s&js_code=%s", base_url, config.APP_ID, config.APP_SECRET, code)
+	openid, _, err := utils.GetWechatOpenidAndSessionKey(code)
+	if err == nil {
+		utils.BuildResponseOk(c, openid)
+	} else {
+		utils.BuildResponseOk(c, "")
+	}
+}
 
-	resp, err := http.Get(url)
+func userCheck(c *gin.Context) {
+	openId := c.DefaultQuery("openid", "")
+	if openId == "" {
+		utils.BuildResponse(c, http.StatusOK, nil, 1, "Invalid request body")
+		return
+	}
+	client := utils.GetPrismaClient()
+	if client == nil {
+		utils.BuildResponse(c, http.StatusOK, nil, 2, "failed to get prisma client")
+		return
+	}
+
+	user, err := client.User.FindUnique(
+		db.User.Openid.Equals(openId),
+	).Exec(context.Background())
 	if err != nil {
-		return "", "", err
-	}
-	defer resp.Body.Close()
-
-	var result struct {
-		Openid     string `json:"openid"`
-		SessionKey string `json:"session_key"`
-		ErrCode    int    `json:"errcode"`
-		ErrMsg     string `json:"errmsg"`
+		utils.BuildResponseOk(c, 0)
+		return
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil {
-		return "", "", err
-	}
+	utils.BuildResponseOk(c, user.ID)
+}
 
-	if result.ErrCode != 0 {
-		return "", "", fmt.Errorf("error from wechat: %d - %s", result.ErrCode, result.ErrMsg)
+func userCreate(c *gin.Context) {
+	// 从请求体中读取 code
+	var params UserReq
+	if err := c.BindJSON(&params); err != nil || params.Code == "" {
+		utils.BuildResponse(c, http.StatusOK, nil, 1, "Invalid request body")
+		return
 	}
-
-	return result.Openid, result.SessionKey, nil
+	client := utils.GetPrismaClient()
+	client.User.CreateOne(
+		db.User.Name.Set(params.Name),
+		db.User.Avatar.Set(""),
+		db.User.Openid.Set(params.OpenId),
+	).Exec(context.Background())
+	utils.BuildResponseOk(c, nil)
 }
 
 func getUserInfoByOpenid(openid string) (*db.UserModel, bool, error) {

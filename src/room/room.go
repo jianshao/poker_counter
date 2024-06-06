@@ -61,16 +61,16 @@ func Init(r *gin.Engine) {
 	register(r)
 }
 
-func buildParams(c *gin.Context) (*utils.RequestParams, error) {
-	var params utils.RequestParams
+func buildParams(c *gin.Context) (*RequestParams, error) {
+	var params RequestParams
 	if err := c.BindJSON(&params); err != nil {
 		return nil, err
 	}
 	return &params, nil
 }
 
-func buildPlayerInfoResp(userInfo *PlayerInfo) utils.PlayerInfoResp {
-	return utils.PlayerInfoResp{
+func buildPlayerInfoResp(userInfo *PlayerInfo) PlayerInfoResp {
+	return PlayerInfoResp{
 		PlayerId:   userInfo.id,
 		PlayerName: userInfo.name,
 		Status:     userInfo.status,
@@ -81,16 +81,16 @@ func buildPlayerInfoResp(userInfo *PlayerInfo) utils.PlayerInfoResp {
 	}
 }
 
-func buildPlayerInfoRespList(players map[int]*PlayerInfo) []utils.PlayerInfoResp {
-	playersResp := []utils.PlayerInfoResp{}
+func buildPlayerInfoRespList(players map[int]*PlayerInfo) []PlayerInfoResp {
+	playersResp := []PlayerInfoResp{}
 	for _, player := range players {
 		playersResp = append(playersResp, buildPlayerInfoResp(player))
 	}
 	return playersResp
 }
 
-func buildRoomInfoResp(roomInfo *RoomInfo) utils.RoomInfoResp {
-	return utils.RoomInfoResp{
+func buildRoomInfoResp(roomInfo *RoomInfo) RoomInfoResp {
+	return RoomInfoResp{
 		RoomId:  roomInfo.roomId,
 		Owner:   roomInfo.owner,
 		Status:  roomInfo.status,
@@ -98,8 +98,8 @@ func buildRoomInfoResp(roomInfo *RoomInfo) utils.RoomInfoResp {
 	}
 }
 
-func buildApplyScoreResp(applyScore *ApplyScore, roomId int) utils.ApplyScoreResp {
-	return utils.ApplyScoreResp{
+func buildApplyScoreResp(applyScore *ApplyScore, roomId int) ApplyScoreResp {
+	return ApplyScoreResp{
 		ApplyId:     applyScore.applyId,
 		PlayerId:    applyScore.userId,
 		RoomId:      roomId,
@@ -111,8 +111,8 @@ func buildApplyScoreResp(applyScore *ApplyScore, roomId int) utils.ApplyScoreRes
 	}
 }
 
-func buildApplyRespList(applyList []ApplyScore, roomId int) []utils.ApplyScoreResp {
-	var applyListResp []utils.ApplyScoreResp
+func buildApplyRespList(applyList []ApplyScore, roomId int) []ApplyScoreResp {
+	var applyListResp []ApplyScoreResp
 	for _, apply := range applyList {
 		applyListResp = append(applyListResp, buildApplyScoreResp(&apply, roomId))
 	}
@@ -289,7 +289,7 @@ func confirmBuyIn(c *gin.Context) {
 						userInfo.currScore += apply.score
 					} else if apply.applyType == 2 {
 						userInfo.finalScore += apply.score
-						// 同时将玩家状态修改为“退出”
+						// 同时将玩家状态修改为"退出"
 						userInfo.status = 0
 						userInfo.exitTime = utils.GetCurrTime()
 					}
@@ -350,7 +350,7 @@ func getApplyScoreList(c *gin.Context) {
 	if roomInfo := getActiveRoom(params.RoomId); roomInfo != nil {
 		if userInfo := getUserFromRoom(params.UserId, roomInfo); userInfo != nil {
 			applyList := buildApplyRespList(userInfo.applyList, params.RoomId)
-			utils.BuildResponseOk(c, utils.ApplyScoreListResp{ApplyList: applyList, Count: len(applyList)})
+			utils.BuildResponseOk(c, ApplyScoreListResp{ApplyList: applyList, Count: len(applyList)})
 		} else {
 			utils.BuildResponse(c, http.StatusBadRequest, nil, 1, "user not exists")
 		}
@@ -363,7 +363,7 @@ func getApplyScoreAll(c *gin.Context) {
 	roomIdStr := c.DefaultQuery("room_id", "")
 	if roomId, err := strconv.Atoi(roomIdStr); err == nil {
 		if roomInfo := getActiveRoom(roomId); roomInfo != nil {
-			applyList := []utils.ApplyScoreResp{}
+			applyList := []ApplyScoreResp{}
 			for _, player := range roomInfo.players {
 				if player.status != 1 {
 					continue
@@ -371,13 +371,13 @@ func getApplyScoreAll(c *gin.Context) {
 
 				applyList = append(applyList, buildApplyRespList(player.applyList, roomId)...)
 			}
-			result := []utils.ApplyScoreResp{}
+			result := []ApplyScoreResp{}
 			for _, apply := range applyList {
 				if apply.Status == 0 {
 					result = append(result, apply)
 				}
 			}
-			utils.BuildResponseOk(c, utils.ApplyScoreListResp{ApplyList: result, Count: len(result)})
+			utils.BuildResponseOk(c, ApplyScoreListResp{ApplyList: result, Count: len(result)})
 		} else {
 			utils.BuildResponse(c, http.StatusBadRequest, nil, 1, "room not exists")
 		}

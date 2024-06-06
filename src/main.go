@@ -20,16 +20,21 @@ func Init() {
 	}
 
 	router := gin.Default()
-	gin.SetMode(gin.DebugMode)
+	env := os.Getenv("ENVIRONMENT")
+	if env == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
 
-	file, _ := os.OpenFile("logs/gin.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, _ := os.OpenFile("./logs/gin.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	router.Use(gin.LoggerWithWriter(file))
 
 	utils.Init()
 	room.Init(router)
 	user.Init(router)
 
-	router.Run() // 监听并在 0.0.0.0:8080 上启动服务
+	router.Run(":8989") // 监听并在 0.0.0.0:8080 上启动服务
 }
 
 func main() {

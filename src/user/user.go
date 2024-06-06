@@ -130,17 +130,14 @@ func getUserInfoByOpenid(openid string) (*db.UserModel, bool, error) {
 	).Exec(context.Background())
 	if err != nil {
 		if err == db.ErrNotFound {
-			// user, err = client.User.CreateOne(
-			// 	db.User.Name.Set(""),
-			// 	db.User.Avatar.Set(""),
-			// 	db.User.Openid.Set(openid),
-			// ).Exec(context.Background())
-			user = &db.UserModel{}
-			user.Openid = openid
+			user, err = client.User.CreateOne(
+				db.User.Name.Set(""),
+				db.User.Avatar.Set(""),
+				db.User.Openid.Set(openid),
+			).Exec(context.Background())
 			isNewUser = true
 		}
 	}
-	isNewUser = true
 
 	return user, isNewUser, err
 }

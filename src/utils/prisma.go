@@ -2,7 +2,7 @@ package utils
 
 import (
 	"log"
-	"private/backend/gamesRoom/prisma/db"
+	"private/backend/poker_counter/prisma/db"
 )
 
 var (

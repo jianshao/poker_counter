@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"private/backend/gamesRoom/src/utils"
+	"private/backend/poker_counter/src/utils"
 
 	"github.com/gin-gonic/gin"
 )

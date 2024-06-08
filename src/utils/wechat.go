@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"private/backend/gamesRoom/src/config"
+	"private/backend/poker_counter/src/config"
 )
 
 var (

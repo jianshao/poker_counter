@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"os"
-	"private/backend/gamesRoom/src/room"
-	"private/backend/gamesRoom/src/user"
-	"private/backend/gamesRoom/src/utils"
+	"private/backend/poker_counter/src/room"
+	"private/backend/poker_counter/src/user"
+	"private/backend/poker_counter/src/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"

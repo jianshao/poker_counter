@@ -1,4 +1,4 @@
-module private/backend/gamesRoom
+module private/backend/poker_counter
 
 go 1.21
 

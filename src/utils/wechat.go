@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"private/backend/poker_counter/src/config"
+
+	"github.com/jianshao/poker_counter/src/config"
 )
 
 var (

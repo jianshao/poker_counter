@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 	"os"
-	"private/backend/poker_counter/src/room"
-	"private/backend/poker_counter/src/user"
-	"private/backend/poker_counter/src/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jianshao/poker_counter/src/room"
+	"github.com/jianshao/poker_counter/src/user"
+	"github.com/jianshao/poker_counter/src/utils"
 	"github.com/joho/godotenv"
 )
 

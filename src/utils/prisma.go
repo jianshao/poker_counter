@@ -2,7 +2,8 @@ package utils
 
 import (
 	"log"
-	"private/backend/poker_counter/prisma/db"
+
+	"github.com/jianshao/poker_counter/prisma/db"
 )
 
 var (

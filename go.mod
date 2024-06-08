@@ -1,8 +1,6 @@
-module private/backend/poker_counter
+module github.com/jianshao/poker_counter
 
-go 1.21
-
-toolchain go1.22.3
+go 1.22.3
 
 require (
 	github.com/gin-gonic/gin v1.10.0

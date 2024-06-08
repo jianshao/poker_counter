@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"private/backend/poker_counter/src/utils"
-
 	"github.com/gin-gonic/gin"
+	"github.com/jianshao/poker_counter/src/utils"
 )
 
 type ApplyScore struct {

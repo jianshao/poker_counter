@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"private/backend/gamesRoom/prisma/db"
-	"private/backend/gamesRoom/src/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jianshao/poker_counter/prisma/db"
+	"github.com/jianshao/poker_counter/src/utils"
 )
 
 func register(r *gin.Engine) {

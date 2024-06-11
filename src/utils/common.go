@@ -32,3 +32,12 @@ func BuildResponse(c *gin.Context, status int, data interface{}, code int, messa
 func GetCurrTime() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
+
+func Init() {
+
+}
+
+func Close() {
+	closePrisma()
+	closeRedis()
+}

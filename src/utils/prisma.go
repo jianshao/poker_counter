@@ -11,23 +11,19 @@ var (
 )
 
 func GetPrismaClient() *db.PrismaClient {
-	if gPrisma != nil {
-		return gPrisma
-	}
-
-	gPrisma = db.NewClient()
-	if err := gPrisma.Prisma.Connect(); err != nil {
-		log.Println(err.Error())
-		gPrisma = nil
+	if gPrisma == nil {
+		gPrisma = db.NewClient()
+		if err := gPrisma.Prisma.Connect(); err != nil {
+			log.Println(err.Error())
+			gPrisma = nil
+		}
 	}
 	return gPrisma
 }
 
-func Init() {
-
-}
-
-func Close() {
-	gPrisma.Prisma.Disconnect()
-	gPrisma = nil
+func closePrisma() {
+	if gPrisma != nil {
+		gPrisma.Prisma.Disconnect()
+		gPrisma = nil
+	}
 }

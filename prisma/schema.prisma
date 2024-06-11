@@ -16,8 +16,8 @@ generator client {
 
 model User {
   id    Int     @id @default(autoincrement())
-  name  String
-  avatar String
+  name  String  @default("")
+  avatar String @default("")
   openid String @unique
   created_time DateTime @default(dbgenerated("now()"))
   updated_time DateTime @updatedAt
@@ -30,6 +30,8 @@ enum RoomStatus {
 
 model Room {
   id Int @id @default(autoincrement())
+  room_id Int
+  name String @default("")
   owner Int 
   status RoomStatus @default(OPEN)
   created_time DateTime @default(dbgenerated("now()"))
@@ -51,8 +53,8 @@ model ScoreRecords {
   id Int @id @default(autoincrement())
   uid Int 
   room_id Int
-  status ScoreRecordStatus @default(APPLY)
   score Int
+  status ScoreRecordStatus @default(APPLY)
   type ScoreRecordType @default(BUYIN)
   created_time DateTime @default(dbgenerated("now()"))
   updated_time DateTime @updatedAt

@@ -2,6 +2,7 @@ package room
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -93,9 +94,11 @@ func loadRoom(roomId int) (*RoomInfo, error) {
 	if err != nil {
 		// 如果数据不存在会进入这个分支
 		return nil, err
-	} else {
+	} else if room.RoomId != 0 {
 		gRoomMap[roomId] = room
 		setRoom2Redis(room)
+	} else {
+		return nil, errors.New("room not exist")
 	}
 	return room, nil
 }

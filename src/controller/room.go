@@ -31,13 +31,13 @@ func createRoomCtrl(c *gin.Context) {
 	}
 
 	if params.UserId == 0 {
-		utils.BuildResponse(c, http.StatusBadRequest, nil, 2, "invalid param: user_id")
+		utils.BuildResponse(c, http.StatusBadRequest, nil, 2, "用户信息不正确")
 		return
 	}
 
 	roomInfo, err := room.CreateRoom(params.UserId)
 	if err != nil {
-		utils.BuildResponse(c, http.StatusOK, nil, 1, err.Error())
+		utils.BuildResponse(c, http.StatusOK, nil, 3, err.Error())
 	} else {
 		utils.BuildResponseOk(c, buildRoomInfoResp(roomInfo))
 	}
@@ -47,9 +47,13 @@ func checkRoomCtrl(c *gin.Context) {
 	roomIdStr := c.DefaultQuery("room_id", "")
 	if roomId, err := strconv.Atoi(roomIdStr); err == nil {
 		roomInfo := room.CheckRoom(roomId)
-		utils.BuildResponseOk(c, buildRoomInfoResp(roomInfo))
+		if roomInfo != nil {
+			utils.BuildResponseOk(c, buildRoomInfoResp(roomInfo))
+		} else {
+			utils.BuildResponse(c, http.StatusOK, nil, 2, "room not exist")
+		}
 	} else {
-		utils.BuildResponse(c, http.StatusOK, nil, 2, "room id error")
+		utils.BuildResponse(c, http.StatusOK, nil, 1, "room id error")
 	}
 }
 
@@ -60,7 +64,7 @@ func closeRoomCtrl(c *gin.Context) {
 		utils.BuildResponse(c, http.StatusBadRequest, nil, 1, err.Error())
 		return
 	}
-	room.CloseRoom(params.RoomId)
+	room.CloseRoom(params.RoomId, params.UserId)
 
 	utils.BuildResponseOk(c, nil)
 }

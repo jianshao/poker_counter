@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"time"
 
 	"github.com/jianshao/poker_counter/src/model/records"
 	"github.com/jianshao/poker_counter/src/view"
@@ -55,12 +56,13 @@ func EntryRoom(roomId, userId int) error {
 	}
 
 	// 用户已经在其他房间内了
-	if user.CurrRoomId != 0 {
-		return errors.New("user already in other room")
+	if user.CurrRoomId != 0 && user.Status == USER_STATUS_PLAYING {
+		return errors.New("user already playing in other room")
 	}
 
 	// 将用户的房间信息更新到本地缓存
-	gUserMap[user.Id].CurrRoomId = roomId
+	user.CurrRoomId = roomId
+	setUser2Redis(user)
 
 	return nil
 }
@@ -78,6 +80,7 @@ func LeaveRoom(roomId, userId int) error {
 	}
 
 	user.CurrRoomId = 0
+	setUser2Redis(user)
 	return nil
 }
 
@@ -92,7 +95,14 @@ func JoinGame(roomId, userId int) error {
 		return errors.New("user not in this room")
 	}
 
-	user.Status = 1
+	if user.Status == USER_STATUS_PLAYING {
+		return nil
+	}
+
+	user.Status = USER_STATUS_PLAYING
+	if user.JoinTime == "" {
+		user.JoinTime = time.Now().Format("2024-06-11 11:42:08")
+	}
 	setUser2Redis(user)
 	return nil
 }
@@ -107,7 +117,12 @@ func QuitGame(roomId, userId int) error {
 		return errors.New("user not in this room")
 	}
 
-	user.Status = 0
+	if user.Status != USER_STATUS_PLAYING {
+		return errors.New("user not playing")
+	}
+
+	user.Status = USER_STATUS_QUIT
+	user.ExitTime = time.Now().Format("2024-06-11 11:42:08")
 	setUser2Redis(user)
 	return nil
 }
@@ -127,8 +142,8 @@ func ApplyBuyIn(roomId, userId, score, applyType int) (*records.ApplyScore, erro
 		return nil, errors.New("user not in this room")
 	}
 
-	if user.Status != 1 {
-		return nil, errors.New("user not active")
+	if user.Status != USER_STATUS_PLAYING {
+		return nil, errors.New("user not playing")
 	}
 
 	apply, err := records.ApplyBuyIn(roomId, userId, score, applyType)

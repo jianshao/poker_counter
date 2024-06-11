@@ -27,6 +27,12 @@ var (
 	gUserMap = map[int]*PlayerInfo{}
 )
 
+const (
+	USER_STATUS_WATCHING = 0
+	USER_STATUS_PLAYING  = 1
+	USER_STATUS_QUIT     = 2
+)
+
 func GetUser(userId int) *PlayerInfo {
 	if user, ok := gUserMap[userId]; ok {
 		return user

@@ -46,3 +46,23 @@ func GetRoomByRoomId(roomId, status int) (*db.RoomModel, error) {
 		db.Room.Status.Equals(int2RoomStatus[status]),
 	).Exec(context.Background())
 }
+
+func GetOpenRoom(owner int) (*db.RoomModel, error) {
+	client := utils.GetPrismaClient()
+	return client.Room.FindFirst(
+		db.Room.Owner.Equals(owner),
+		db.Room.Status.Equals("OPEN"),
+	).Exec(context.Background())
+}
+
+func CloseRoom(roomId, owner int) error {
+	client := utils.GetPrismaClient()
+	client.Room.FindMany(
+		db.Room.Owner.Equals(owner),
+		db.Room.Status.Equals("OPEN"),
+		db.Room.RoomID.Equals(roomId),
+	).Update(
+		db.Room.Status.Set("CLOSED"),
+	).Exec(context.Background())
+	return nil
+}

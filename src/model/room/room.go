@@ -2,7 +2,9 @@ package room
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/jianshao/poker_counter/prisma/db"
 	"github.com/jianshao/poker_counter/src/model/records"
 	"github.com/jianshao/poker_counter/src/model/user"
 	"github.com/jianshao/poker_counter/src/view"
@@ -15,30 +17,44 @@ const (
 // 1. owner create room
 func CreateRoom(userId int) (*RoomInfo, error) {
 	// 用户在同一时间只能创建一个房间内
-	if user.GetUserCurrRoomId(userId) != INVALID_ROOM_ID {
-		return nil, errors.New("already have a room")
+	room, err := view.GetOpenRoom(userId)
+	if err == db.ErrNotFound {
+		// 在数据库中创建一个房间
+		roomId := generateRoomId()
+		if _, err := view.CreateOneRoom(roomId, userId); err != nil {
+			return nil, err
+		}
+
+		// 将房间信息载入进程
+		return loadRoom(roomId)
 	}
 
-	// 在数据库中创建一个房间
-	roomId := generateRoomId()
-	if _, err := view.CreateOneRoom(roomId, userId); err != nil {
+	if err != nil {
 		return nil, err
 	}
-
-	// 将房间信息载入进程
-	return loadRoom(roomId)
+	return nil, errors.New(fmt.Sprintf("已经创建房间：%d", room.RoomID))
 }
 
 func CheckRoom(roomId int) *RoomInfo {
 	return getActiveRoom(roomId)
 }
 
-func CloseRoom(roomId int) {
-	if roomInfo := getActiveRoom(roomId); roomInfo != nil {
-		roomInfo.Status = RoomStatus_Close
-		setRoom2Redis(roomInfo)
-		// 设置过期时间,防止长时间占用
+func CloseRoom(roomId, userId int) error {
+	room := getActiveRoom(roomId)
+	if room == nil {
+		return nil
 	}
+
+	if room.Owner != userId {
+		return errors.New("only room owner can close room")
+	}
+
+	room.Status = RoomStatus_Close
+	// 设置过期时间,防止长时间占用
+	setRoom2Redis(room)
+	// 更新数据库
+	view.CloseRoom(roomId, userId)
+	return nil
 }
 
 // 不在任何房间的用户才能进入指定房间

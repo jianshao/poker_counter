@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/jianshao/poker_counter/src/config"
 )
@@ -31,9 +33,15 @@ func GetString(key string) (string, error) {
 	return redis.String(conn.Do("GET", key))
 }
 
-func SetString(key, value string) error {
+func SetString(key, value string, timeout int) error {
 	conn := GetRedisConn()
-	_, err := conn.Do("SET", key, value)
+	err := errors.New("")
+	if timeout == 0 {
+		_, err = conn.Do("SET", key, value)
+	} else {
+		_, err = conn.Do("SET", key, value, "EX", timeout)
+	}
+
 	return err
 }
 

@@ -96,7 +96,7 @@ func loadRoom(roomId int) (*RoomInfo, error) {
 		return nil, err
 	} else if room.RoomId != 0 {
 		gRoomMap[roomId] = room
-		setRoom2Redis(room)
+		setRoom2Redis(room, 0)
 	} else {
 		return nil, errors.New("room not exist")
 	}
@@ -137,11 +137,11 @@ func loadRoomFromRedis(roomId int) (*RoomInfo, error) {
 	return &room, nil
 }
 
-func setRoom2Redis(room *RoomInfo) error {
+func setRoom2Redis(room *RoomInfo, timeout int) error {
 	key := buildRoomKey(room.RoomId)
 	roomStr, err := json.Marshal(room)
 	if err != nil {
 		return err
 	}
-	return utils.SetString(key, string(roomStr))
+	return utils.SetString(key, string(roomStr), timeout)
 }

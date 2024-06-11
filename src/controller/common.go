@@ -63,9 +63,24 @@ func buildApplyScoreResp(applyScore *records.ApplyScore) ApplyScoreResp {
 	}
 }
 
-func buildPlayerInfoResp(userInfo *user.PlayerInfo) PlayerInfoResp {
+func buildPlayerInfoResp(userInfo *user.PlayerInfo, roomId int) PlayerInfoResp {
+	// 只需要用户本身的静态数据
+	if roomId == 0 {
+		return PlayerInfoResp{
+			Id:         userInfo.Id,
+			Name:       userInfo.Name,
+			OpenId:     userInfo.OpenId,
+			CurrRoomId: userInfo.CurrRoomId,
+		}
+	}
+	room, ok := userInfo.Rooms[roomId]
+	if !ok {
+		room = &user.UserRoomInfo{
+			ApplyList: map[int]int{},
+		}
+	}
 	applies := []ApplyScoreResp{}
-	for _, applyId := range userInfo.ApplyList {
+	for _, applyId := range room.ApplyList {
 		apply, _ := records.GetApply(applyId)
 		applies = append(applies, buildApplyScoreResp(apply))
 	}
@@ -74,11 +89,11 @@ func buildPlayerInfoResp(userInfo *user.PlayerInfo) PlayerInfoResp {
 		Name:       userInfo.Name,
 		OpenId:     userInfo.OpenId,
 		CurrRoomId: userInfo.CurrRoomId,
-		Status:     userInfo.Status,
-		CurrScore:  userInfo.CurrScore,
-		FinalScore: userInfo.FinalScore,
-		JoinTime:   userInfo.JoinTime,
-		ExitTime:   userInfo.ExitTime,
+		Status:     room.Status,
+		CurrScore:  room.CurrScore,
+		FinalScore: room.FinalScore,
+		JoinTime:   room.JoinTime,
+		ExitTime:   room.ExitTime,
 		Applies:    applies,
 	}
 }
@@ -86,7 +101,7 @@ func buildPlayerInfoResp(userInfo *user.PlayerInfo) PlayerInfoResp {
 func buildRoomInfoResp(roomInfo *room.RoomInfo) RoomInfoResp {
 	players := []PlayerInfoResp{}
 	for _, playerId := range roomInfo.Players {
-		players = append(players, buildPlayerInfoResp(user.GetUser(playerId)))
+		players = append(players, buildPlayerInfoResp(user.GetUser(playerId), roomInfo.RoomId))
 	}
 	return RoomInfoResp{
 		Id:      roomInfo.RoomId,

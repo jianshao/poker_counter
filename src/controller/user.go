@@ -30,7 +30,7 @@ func userLoginCtrl(c *gin.Context) {
 	userInfo := user.UserLogin(params.Id)
 
 	// 返回用户信息给客户端
-	utils.BuildResponseOk(c, buildPlayerInfoResp(userInfo))
+	utils.BuildResponseOk(c, buildPlayerInfoResp(userInfo, 0))
 }
 
 // 根据code获取openid，用于后续登录/注册
@@ -46,7 +46,7 @@ func getOpenIdCtrl(c *gin.Context) {
 	if err == nil {
 		utils.BuildResponseOk(c, buildPlayerInfoResp(&user.PlayerInfo{
 			OpenId: openid,
-		}))
+		}, 0))
 	} else {
 		// 微信接口出错
 		utils.BuildResponse(c, http.StatusOK, nil, 2, err.Error())
@@ -63,7 +63,7 @@ func userCheckCtrl(c *gin.Context) {
 
 	user, err := user.UserCheck(params.OpenId)
 	if err == nil {
-		utils.BuildResponseOk(c, buildPlayerInfoResp(user))
+		utils.BuildResponseOk(c, buildPlayerInfoResp(user, 0))
 	} else {
 		utils.BuildResponse(c, http.StatusOK, nil, 2, err.Error())
 	}
@@ -84,7 +84,7 @@ func userRegisterCtrl(c *gin.Context) {
 
 	user, err := user.UserRegister(params.Name, params.OpenId)
 	if err == nil {
-		utils.BuildResponseOk(c, buildPlayerInfoResp(user))
+		utils.BuildResponseOk(c, buildPlayerInfoResp(user, 0))
 	} else {
 		utils.BuildResponse(c, http.StatusOK, nil, 2, err.Error())
 	}

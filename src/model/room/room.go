@@ -51,7 +51,7 @@ func CloseRoom(roomId, userId int) error {
 
 	room.Status = RoomStatus_Close
 	// 设置过期时间,防止长时间占用
-	setRoom2Redis(room)
+	setRoom2Redis(room, 24*3600)
 	// 更新数据库
 	view.CloseRoom(roomId, userId)
 	return nil
@@ -73,7 +73,7 @@ func EntryRoom(roomId, userId int) (bool, error) {
 
 	// 构建本层数据
 	room.Players[userId] = userId
-	setRoom2Redis(room)
+	setRoom2Redis(room, 0)
 	return true, nil
 }
 
@@ -83,6 +83,10 @@ func JoinGame(roomId, userId int) (bool, error) {
 	roomInfo := getActiveRoom(roomId)
 	if roomInfo == nil {
 		return false, errors.New("room not existed")
+	}
+
+	if _, ok := roomInfo.Players[userId]; !ok {
+		return false, errors.New("user not in this room")
 	}
 
 	if err := user.JoinGame(roomId, userId); err != nil {
@@ -118,8 +122,9 @@ func LeaveRoom(roomId, userId int) (bool, error) {
 	}
 
 	// 清理本层数据
-	room.Players[userId] = userId
-	setRoom2Redis(room)
+	// room.Players[userId] = userId
+	delete(room.Players, userId)
+	setRoom2Redis(room, 0)
 	return true, nil
 }
 

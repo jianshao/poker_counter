@@ -35,14 +35,6 @@ func UserRegister(name, openId string) (*PlayerInfo, error) {
 	return loadUser(user.ID), nil
 }
 
-func GetUserCurrRoomId(userId int) int {
-	user := GetActiveUser(userId)
-	if user != nil {
-		return user.CurrRoomId
-	}
-	return 0
-}
-
 func EntryRoom(roomId, userId int) error {
 	// 先检查用户是否存在
 	user := GetUser(userId)
@@ -55,14 +47,20 @@ func EntryRoom(roomId, userId int) error {
 		return nil
 	}
 
-	// 用户已经在其他房间内了
-	if user.CurrRoomId != 0 && user.Status == USER_STATUS_PLAYING {
+	// 用户已经在其他房间玩游戏了
+	if user.CurrRoomId != 0 && user.Rooms[user.CurrRoomId].Status == USER_STATUS_PLAYING {
 		return errors.New("user already playing in other room")
 	}
 
 	// 将用户的房间信息更新到本地缓存
 	user.CurrRoomId = roomId
-	setUser2Redis(user)
+	// 如果用户的房间信息不存在，就初始化一下
+	if _, ok := user.Rooms[roomId]; !ok {
+		user.Rooms[roomId] = &UserRoomInfo{
+			ApplyList: make(map[int]int),
+		}
+	}
+	setUser2Redis(user, 0)
 
 	return nil
 }
@@ -74,13 +72,22 @@ func LeaveRoom(roomId, userId int) error {
 		return errors.New("user not exist")
 	}
 
+	// 用户当前不在任何房间
+	if user.CurrRoomId == 0 {
+		return nil
+	}
+
 	// 退出的房间号不对
-	if user.CurrRoomId != roomId && user.CurrRoomId != 0 {
+	if user.CurrRoomId != roomId {
 		return errors.New("user not in this room")
 	}
 
+	if user.Rooms[user.CurrRoomId].Status == USER_STATUS_PLAYING {
+		return errors.New("user is playing, quit first")
+	}
+
 	user.CurrRoomId = 0
-	setUser2Redis(user)
+	setUser2Redis(user, 0)
 	return nil
 }
 
@@ -95,15 +102,15 @@ func JoinGame(roomId, userId int) error {
 		return errors.New("user not in this room")
 	}
 
-	if user.Status == USER_STATUS_PLAYING {
+	if user.Rooms[user.CurrRoomId].Status == USER_STATUS_PLAYING {
 		return nil
 	}
 
-	user.Status = USER_STATUS_PLAYING
-	if user.JoinTime == "" {
-		user.JoinTime = time.Now().Format("2024-06-11 11:42:08")
+	user.Rooms[user.CurrRoomId].Status = USER_STATUS_PLAYING
+	if user.Rooms[user.CurrRoomId].JoinTime == "" {
+		user.Rooms[user.CurrRoomId].JoinTime = time.Now().Format("2006-01-02 15:04:05")
 	}
-	setUser2Redis(user)
+	setUser2Redis(user, 0)
 	return nil
 }
 
@@ -117,13 +124,13 @@ func QuitGame(roomId, userId int) error {
 		return errors.New("user not in this room")
 	}
 
-	if user.Status != USER_STATUS_PLAYING {
+	if user.Rooms[user.CurrRoomId].Status != USER_STATUS_PLAYING {
 		return errors.New("user not playing")
 	}
 
-	user.Status = USER_STATUS_QUIT
-	user.ExitTime = time.Now().Format("2024-06-11 11:42:08")
-	setUser2Redis(user)
+	user.Rooms[user.CurrRoomId].Status = USER_STATUS_QUIT
+	user.Rooms[user.CurrRoomId].ExitTime = time.Now().Format("2006-01-02 15:04:05")
+	setUser2Redis(user, 0)
 	return nil
 }
 
@@ -142,7 +149,7 @@ func ApplyBuyIn(roomId, userId, score, applyType int) (*records.ApplyScore, erro
 		return nil, errors.New("user not in this room")
 	}
 
-	if user.Status != USER_STATUS_PLAYING {
+	if user.Rooms[user.CurrRoomId].Status != USER_STATUS_PLAYING {
 		return nil, errors.New("user not playing")
 	}
 
@@ -151,8 +158,8 @@ func ApplyBuyIn(roomId, userId, score, applyType int) (*records.ApplyScore, erro
 		return nil, err
 	}
 
-	user.ApplyList[apply.Id] = apply.Id
-	setUser2Redis(user)
+	user.Rooms[user.CurrRoomId].ApplyList[apply.Id] = apply.Id
+	setUser2Redis(user, 0)
 
 	addName2Apply(apply)
 	return apply, nil
@@ -170,15 +177,15 @@ func ConfirmBuyIn(applyId, status int) (*records.ApplyScore, error) {
 	if apply.ApplyType == 0 {
 		// 确认状态：0-未确认，1-同意，2-拒绝
 		if status == 1 {
-			user.CurrScore += apply.Score
+			user.Rooms[apply.RoomId].CurrScore += apply.Score
 		}
 	} else {
 		if status == 1 {
-			user.FinalScore += apply.Score
+			user.Rooms[apply.RoomId].FinalScore += apply.Score
 		}
 	}
 
-	setUser2Redis(user)
+	setUser2Redis(user, 0)
 	addName2Apply(apply)
 	return apply, nil
 }

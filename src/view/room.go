@@ -66,3 +66,10 @@ func CloseRoom(roomId, owner int) error {
 	).Exec(context.Background())
 	return nil
 }
+
+func GetAllOpenRooms() ([]db.RoomModel, error) {
+	client := utils.GetPrismaClient()
+	return client.Room.FindMany(
+		db.Room.Status.Equals("OPEN"),
+	).Exec(context.Background())
+}

@@ -64,9 +64,12 @@ func closeRoomCtrl(c *gin.Context) {
 		utils.BuildResponse(c, http.StatusBadRequest, nil, 1, err.Error())
 		return
 	}
-	room.CloseRoom(params.RoomId, params.UserId)
-
-	utils.BuildResponseOk(c, nil)
+	err = room.CloseRoom(params.RoomId, params.UserId)
+	if err != nil {
+		utils.BuildResponse(c, http.StatusOK, nil, 2, err.Error())
+	} else {
+		utils.BuildResponseOk(c, nil)
+	}
 }
 
 type boolResp struct {

@@ -45,6 +45,18 @@ func GetUser(userId int) *PlayerInfo {
 	return loadUser(userId)
 }
 
+func IsUserPlaying(roomId, userId int) bool {
+	user := GetUser(userId)
+	if user == nil {
+		return false
+	}
+
+	if room, ok := user.Rooms[roomId]; ok && room.Status == USER_STATUS_PLAYING {
+		return true
+	}
+	return false
+}
+
 // 从database中拉取用户数据
 func loadUserFromData(userId int) (*PlayerInfo, error) {
 	user, err := view.GetUserById(userId)

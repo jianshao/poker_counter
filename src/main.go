@@ -46,7 +46,7 @@ func main() {
 	// 创建一个通道来接收信号
 	// 监听中断信号，例如在 Unix 系统中的 SIGINT
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGINT, syscall.SIGKILL, syscall.SIGSTOP)
 
 	go func(router *gin.Engine) {
 		// 阻塞直到接收到信号

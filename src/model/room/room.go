@@ -49,6 +49,16 @@ func CloseRoom(roomId, userId int) error {
 		return errors.New("only room owner can close room")
 	}
 
+	count := 0
+	for _, playerId := range room.Players {
+		if user.IsUserPlaying(roomId, playerId) {
+			count += 1
+		}
+	}
+	if count > 0 {
+		return errors.New(fmt.Sprintf("仍有%d个玩家没有提交剩余积分数量，房间不可关闭。", count))
+	}
+
 	room.Status = RoomStatus_Close
 	// 设置过期时间,防止长时间占用
 	setRoom2Redis(room, 24*3600)

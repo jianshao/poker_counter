@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jianshao/poker_counter/src/model/records"
@@ -49,7 +50,7 @@ func EntryRoom(roomId, userId int) error {
 
 	// 用户已经在其他房间玩游戏了
 	if user.CurrRoomId != 0 && user.Rooms[user.CurrRoomId].Status == USER_STATUS_PLAYING {
-		return errors.New("user already playing in other room")
+		return errors.New(fmt.Sprintf("已经在游戏中，请先在房间%d中退出游戏", user.CurrRoomId))
 	}
 
 	// 将用户的房间信息更新到本地缓存

@@ -16,7 +16,7 @@ const (
 
 // 1. owner create room
 func CreateRoom(userId int) (*RoomInfo, error) {
-	// 用户在同一时间只能创建一个房间内
+	// 用户在同一时间只能存在一个未关闭的房间
 	room, err := view.GetOpenRoom(userId)
 	if err == db.ErrNotFound {
 		// 在数据库中创建一个房间
@@ -32,7 +32,7 @@ func CreateRoom(userId int) (*RoomInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return nil, errors.New(fmt.Sprintf("已经创建房间：%d", room.RoomID))
+	return nil, errors.New(fmt.Sprintf("已经拥有房间：%d", room.RoomID))
 }
 
 func CheckRoom(roomId int) *RoomInfo {

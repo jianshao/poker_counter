@@ -6,12 +6,45 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jianshao/poker_counter/src/controller"
 	"github.com/jianshao/poker_counter/src/utils"
+	"github.com/jianshao/poker_counter/src/utils/logs"
+	"github.com/jianshao/poker_counter/src/utils/schedule"
 	"github.com/joho/godotenv"
 )
+
+func handler() error {
+	fmt.Println("handler")
+	return nil
+}
+
+func handler2() error {
+	fmt.Println("2")
+	return nil
+}
+
+func AddSchedule(name string, handler func() error, firstProTime time.Time, interval int, scheduleType int) {
+	id, err := schedule.AddSchedule(&schedule.Schedule{
+		Name:         name,
+		Handler:      handler,
+		Type:         scheduleType,
+		FirstProTime: firstProTime,
+		Interval:     int64(interval),
+	})
+	if err != nil {
+		logs.Error(nil, fmt.Sprintf("add schedule failed: %s", err.Error()))
+	} else {
+		logs.Info(nil, fmt.Sprintf(" add schedule %d", id))
+		err = schedule.StartSchedule(id)
+		if err != nil {
+			logs.Error(nil, fmt.Sprintf("start schedule failed: %s", err.Error()))
+		}
+	}
+
+}
 
 func Init(router *gin.Engine) {
 
@@ -25,11 +58,21 @@ func Init(router *gin.Engine) {
 	router.Use(gin.LoggerWithWriter(file))
 
 	controller.Init(router)
+	logs.Init()
+	go func() {
+		schedule.Init()
+		AddSchedule("handler1", handler, time.Now().Add(time.Second*10), 0, schedule.SCHEDULE_TYPE_FIXED)
 
+		time.Sleep(time.Second)
+		AddSchedule("handler2", handler2, time.Now().Add(time.Second*10), 10, schedule.SCHEDULE_TYPE_INTERVAL)
+
+		schedule.Run()
+	}()
 }
 
 func close(router *gin.Engine) {
 	utils.Close()
+	schedule.Destroy()
 }
 
 func main() {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/jianshao/poker_counter/src/config"
@@ -51,6 +52,7 @@ func GetWechatOpenidAndSessionKey(code string) (openid, sessionKey string, err e
 	if err != nil {
 		return "", "", err
 	}
+	log.Default().Printf("get openid from wechat: %s", result)
 
 	if result.ErrCode != 0 {
 		return "", "", fmt.Errorf("error from wechat: %d - %s", result.ErrCode, result.ErrMsg)

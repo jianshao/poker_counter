@@ -145,3 +145,7 @@ func setRoom2Redis(room *RoomInfo, timeout int) error {
 	}
 	return utils.SetString(key, string(roomStr), timeout)
 }
+
+func delRoomFromRedis(roomId int) error {
+	return utils.Del(buildRoomKey(roomId))
+}

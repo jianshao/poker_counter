@@ -60,3 +60,9 @@ func SetInt(key string, value int) error {
 	_, err := conn.Do("SET", key, value)
 	return err
 }
+
+func Del(key string) error {
+	conn := GetRedisConn()
+	_, err := conn.Do("DEL", key)
+	return err
+}

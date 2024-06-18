@@ -202,3 +202,23 @@ func GetAllScoreApplies(roomId int) ([]records.ApplyScore, error) {
 	}
 	return applies, nil
 }
+
+func ClearUnusedRooms(users, rooms map[int]int) {
+	for userId, _ := range users {
+		user := GetUser(userId)
+		if user == nil {
+			continue
+		}
+
+		for roomId, _ := range rooms {
+			if _, ok := user.Rooms[roomId]; ok {
+				delete(user.Rooms, roomId)
+				if user.CurrRoomId == roomId {
+					user.CurrRoomId = 0
+				}
+			}
+		}
+		setUser2Redis(user, 0)
+	}
+	return
+}

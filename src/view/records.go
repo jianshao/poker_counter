@@ -52,7 +52,7 @@ func GetScoreRecords(roomId, status int) ([]db.ScoreRecordsModel, error) {
 	return client.ScoreRecords.FindMany(
 		db.ScoreRecords.Status.Equals(int2Status[status]),
 		db.ScoreRecords.RoomID.Equals(roomId),
-	).Exec(context.Background())
+	).OrderBy(db.ScoreRecords.UpdatedTime.Order(db.SortOrderDesc)).Exec(context.Background())
 }
 
 func GetScoreRecordById(id int) (*db.ScoreRecordsModel, error) {

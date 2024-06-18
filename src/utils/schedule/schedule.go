@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jianshao/poker_counter/src/config"
 	"github.com/jianshao/poker_counter/src/utils/logs"
 )
 
@@ -170,7 +171,7 @@ func afterProc(node *scheduleNode) {
 func doProc(schedule *Schedule) {
 	// 检查状态是否可执行
 	if schedule.Status != SCHEDULE_STATUS_RUN {
-		logs.Info(nil, fmt.Sprintf("schedule %d not run, skipped", schedule.Id))
+		// logs.Info(nil, fmt.Sprintf("schedule %d not run, skipped", schedule.Id))
 	} else {
 		err := schedule.Handler()
 		if err != nil {
@@ -205,14 +206,14 @@ func processSchedules() {
 		// 从列表中取出第一个，检查是否到时间
 		node := getFirstNode()
 		if node == nil {
-			logs.Info(nil, "schedule list is empty")
+			// logs.Info(nil, "schedule list is empty")
 			return
 		}
 
 		// 没到时间，退出
 		sche := node.data
 		if time.Now().Compare(sche.NextProTime) == -1 {
-			logs.Info(nil, fmt.Sprintf("schedule %d time not ready, return.", sche.Id))
+			// logs.Info(nil, fmt.Sprintf("schedule %d time not ready, return.", sche.Id))
 			return
 		}
 
@@ -246,13 +247,10 @@ func Run() {
 		case <-gManager.StopRunning:
 			logs.Info(nil, "schedule stop")
 			return
-		case <-time.After(time.Second * 5):
+		case <-time.After(time.Second * time.Duration(config.Interval)):
 			// check schedule
-			logs.Info(nil, "schedule check")
+			// logs.Info(nil, "schedule check")
 			processSchedules()
-			// default:
-			// 	time.Sleep(time.Second)
-			// 	logs.Info(nil, "schedule sleep")
 		}
 	}
 }
@@ -264,6 +262,17 @@ func Destroy() {
 		gManager = nil
 	}
 	logs.Info(nil, "schedule destroy")
+}
+
+func generateId() int64 {
+	// 生成一个随机ID
+	// 这里使用时间戳，保证ID的唯一性
+	lock := sync.Mutex{}
+	lock.Lock()
+	time.Sleep(time.Microsecond * 10)
+	id := time.Now().UnixMicro()
+	lock.Unlock()
+	return id
 }
 
 func AddSchedule(schedule *Schedule) (int64, error) {
@@ -280,7 +289,7 @@ func AddSchedule(schedule *Schedule) (int64, error) {
 		return 0, errors.New("interval is invalid")
 	}
 
-	schedule.Id = time.Now().UnixMicro()
+	schedule.Id = generateId()
 	schedule.NextProTime = schedule.FirstProTime
 	err := addNode(schedule)
 	if err != nil {

@@ -3,6 +3,7 @@ package room
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jianshao/poker_counter/prisma/db"
 	"github.com/jianshao/poker_counter/src/model/records"
@@ -173,4 +174,33 @@ func GetAllScoreApplies(roomId int) ([]records.ApplyScore, error) {
 	}
 
 	return user.GetAllScoreApplies(roomId)
+}
+
+// 清理超过3天未关闭，且超过一天没有买入申请的房间
+func ClearUnusedRooms() error {
+	// 先获取所有未关闭的房间
+	openingRooms, err := view.GetOpenRoomsBefore(time.Now().Add(time.Hour * -24 * 4))
+	if err != nil {
+		return err
+	}
+
+	// 收集所有涉及到的房间和用户
+	roomMap := map[int]int{}
+	userMap := map[int]int{}
+	for _, room := range openingRooms {
+		roomMap[room.RoomID] = room.Owner
+		delRoomFromRedis(room.RoomID)
+		view.CloseRoom(room.RoomID, room.Owner)
+
+		currRoom := getRoom(room.RoomID)
+		if currRoom == nil || currRoom.Players == nil {
+			continue
+		}
+		for _, playerId := range currRoom.Players {
+			userMap[playerId] = playerId
+		}
+	}
+	// 清理用户存储的信息
+	user.ClearUnusedRooms(userMap, roomMap)
+	return nil
 }

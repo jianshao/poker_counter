@@ -5,6 +5,7 @@ package view
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jianshao/poker_counter/prisma/db"
 	"github.com/jianshao/poker_counter/src/utils"
@@ -71,5 +72,13 @@ func GetAllOpenRooms() ([]db.RoomModel, error) {
 	client := utils.GetPrismaClient()
 	return client.Room.FindMany(
 		db.Room.Status.Equals("OPEN"),
+	).Exec(context.Background())
+}
+
+func GetOpenRoomsBefore(tt time.Time) ([]db.RoomModel, error) {
+	client := utils.GetPrismaClient()
+	return client.Room.FindMany(
+		db.Room.Status.Equals("OPEN"),
+		db.Room.CreatedTime.Before(tt),
 	).Exec(context.Background())
 }
